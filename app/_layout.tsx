@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import "react-native-reanimated";
 
 import { View } from "react-native";
+import { ToastProvider } from "react-native-toast-notifications";
+import TabsLayout from "./(tabs)/_layout";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -45,21 +47,15 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   return (
-    <>
-      {isLoggedIn ? (
-        <View></View>
-      ) : (
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(routes)/welcome-intro/index" />
-          <Stack.Screen name="(routes)/login/index" />
-          <Stack.Screen name="(routes)/sign-up/index" />
-          <Stack.Screen name="(routes)/forgot-password/index" />
-        </Stack>
-      )}
-    </>
+    <ToastProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(routes)/welcome-intro/index" />
+        <Stack.Screen name="(routes)/login/index" />
+        <Stack.Screen name="(routes)/sign-up/index" />
+        <Stack.Screen name="(routes)/forgot-password/index" />
+      </Stack>
+    </ToastProvider>
   );
 }

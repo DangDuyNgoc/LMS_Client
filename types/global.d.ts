@@ -6,3 +6,14 @@ type onboardingSwiperDataType = {
   sortDescription2?: string;
   image: any;
 };
+
+type User = {
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: Avatar;
+  password?: string;
+  courses: any;
+  createdAt: Date;
+  updatedAt: Date;
+}

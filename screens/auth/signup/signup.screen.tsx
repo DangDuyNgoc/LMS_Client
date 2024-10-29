@@ -34,6 +34,7 @@ import { router } from "expo-router";
 import axios from "axios";
 import { Toast } from "react-native-toast-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SERVER_URI } from "@/utils/uri";
 
 export default function SignUpScreen() {
   const [isPasswordVisible, setPasswordVisible] = useState(false);
@@ -81,29 +82,32 @@ export default function SignUpScreen() {
   };
 
   const handleSignUp = async () => {
-    router.push("/(routes)/verifyAccount");
+    try {
+      setButtonSpinner(true);
 
-    // setButtonSpinner(true);
-
-    // await axios.post("http://localhost:8080/resgistration", {
-    //   name: userInfo.name,
-    //   email: userInfo.email,
-    //   password: userInfo.password
-    // })
-    //   .then(async (res) => {
-    //     await AsyncStorage.setItem("activation_token", res.data.activationToken);
-    //     setUserInfo({
-    //       name: "",
-    //       email: "",
-    //       password: ""
-    //     });
-    //     setButtonSpinner(false);
-    //     router.push("/(routes)/verifyAccount")
-    //   })
-    //   .catch((error) => {
-    //     console.log(error);
-    //     setButtonSpinner(false);
-    //   });
+      const res = await axios.post(`${SERVER_URI}/registration`, {
+        name: userInfo.name,
+        email: userInfo.email,
+        password: userInfo.password,
+      });
+      await AsyncStorage.setItem("activation_token", res.data.activationToken);
+      Toast.show(res.data?.message, {
+        type: "success",
+      });
+      setUserInfo({
+        name: "",
+        email: "",
+        password: "",
+      });
+      router.push("/(routes)/verifyAccount");
+      setButtonSpinner(false);
+    } catch (error) {
+      console.log(error);
+      Toast.show("Email already exits!", {
+        type: "danger",
+      });
+      setButtonSpinner(false);
+    }
   };
 
   return (
@@ -247,9 +251,7 @@ export default function SignUpScreen() {
               <Text style={{ fontSize: 18, fontFamily: "Raleway_600SemiBold" }}>
                 Already have an account?
               </Text>
-              <TouchableOpacity
-                onPress={() => router.push("/(routes)/login")}
-              >
+              <TouchableOpacity onPress={() => router.push("/(routes)/login")}>
                 <Text
                   style={{
                     fontSize: 18,

@@ -10,6 +10,8 @@ import { router } from "expo-router";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Button from "@/components/button/button";
+import { SERVER_URI } from "@/utils/uri";
+import { Toast } from "react-native-toast-notifications";
 
 export default function VerifyAccountScreen() {
   const [code, setCode] = useState(new Array(4).fill(""));
@@ -35,21 +37,26 @@ export default function VerifyAccountScreen() {
   };
 
   const handleSubmit = async () => {
-    router.push("/(routes)/login")
-    // const otp = code.join("");
-    // const activation_token = await AsyncStorage.getItem("activation_token");
+    try {
+      const otp = code.join("");
+      const activation_token = await AsyncStorage.getItem("activation_token");
 
-    // await axios.post("http://localhost:8080/active-user", {
-    //   activation_token,
-    //   activation_code: otp
-    // })
-    // .then(async (res) => {
-    //   setCode(new Array(4).fill(""));
-    //   router.push("/(routes)/login")
-    // })
-    // .catch(error => {
-    //   console.log(error);
-    // })
+      const res = await axios.post(`${SERVER_URI}/active-user`, {
+        activation_token,
+        activation_code: otp,
+      });
+
+      Toast.show(res.data?.message, {
+        type: "success",
+      });
+      setCode(new Array(4).fill(""));
+      router.push("/(routes)/login");
+    } catch (error) {
+      console.log(error);
+      Toast.show("Your OTP is not valid or expired", {
+        type: "danger",
+      });
+    }
   };
   return (
     <View style={styles.container}>
