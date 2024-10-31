@@ -10,11 +10,11 @@ export default function TabsLayout() {
           let iconName;
           if (route.name === "index") {
             iconName = require("@/assets/icons/HouseSimple.png");
-          } else if (route.name === "search/index") {
+          } else if (route.name === "search") {
             iconName = require("@/assets/icons/search.png");
-          } else if (route.name === "courses/index") {
+          } else if (route.name === "courses") {
             iconName = require("@/assets/icons/BookBookmark.png");
-          } else if (route.name === "profile/index") {
+          } else if (route.name === "profile") {
             iconName = require("@/assets/icons/User.png");
           }
           return (

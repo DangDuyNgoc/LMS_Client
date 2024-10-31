@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from "react-native";
 import React from "react";
 import { useFonts } from "expo-font";
 import { Nunito_700Bold } from "@expo-google-fonts/nunito";

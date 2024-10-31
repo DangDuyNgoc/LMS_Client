@@ -7,6 +7,8 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 import {
   Entypo,
@@ -32,8 +34,8 @@ import { commonStyles } from "@/styles/common/common.styles";
 import { router } from "expo-router";
 import axios from "axios";
 import { Toast } from "react-native-toast-notifications";
-import { SERVER_URI } from "@/utils/uri";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SERVER_URI } from "@/utils/uri";
 
 export default function LoginScreen() {
   const [isPasswordVisible, setPasswordVisible] = useState(false);
@@ -61,196 +63,195 @@ export default function LoginScreen() {
   }
 
   const handlePasswordValidation = (value: string) => {
-    const password = value;
-    const passwordSixValue = /(?=.{6,})/;
-
-    if (!passwordSixValue.test(password)) {
-      setError({
-        ...error,
-        password: "Write at least 6 characters",
-      });
-      setUserInfo({ ...userInfo, password: "" });
-    } else {
-      setError({
-        ...error,
-        password: "",
-      });
-      setUserInfo({ ...userInfo, password: value });
-    }
+    setError({
+      ...error,
+      password: "",
+    });
+    setUserInfo({ ...userInfo, password: value });
   };
 
   const handleSignIn = async () => {
     try {
-      const res = await axios.post(`${SERVER_URI}/login-user`, {
+      const res = await axios.post(`${SERVER_URI}/user/login-user`, {
         email: userInfo.email,
         password: userInfo.password,
+      });
+      Toast.show(res.data?.message, {
+        type: "success",
       });
       router.push("/(tabs)");
       await AsyncStorage.setItem("access_token", res.data.accessToken);
       await AsyncStorage.setItem("refresh_token", res.data.refreshToken);
-    } catch (error) {
-      console.log(error);
-      Toast.show("Email or password is not correct!", {
+    } catch (error: any) {
+      console.log("Login failed:", error.response.data.message);
+      Toast.show(error.response.data.message, {
         type: "danger",
       });
     }
   };
 
   return (
-    <LinearGradient
-      colors={["#E5ECF9", "#F6F7F9"]}
-      style={{ flex: 1, paddingTop: 20 }}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"} 
     >
-      <ScrollView>
-        <Image
-          style={styles.signInImage}
-          source={require("@/assets/sign-in/sign_in.png")}
-        />
-        <Text style={[styles.welcomeText, { fontFamily: "Raleway_700Bold" }]}>
-          Welcome Back!
-        </Text>
-        <Text style={styles.learningText}>
-          Login to your existing account of Becodemy
-        </Text>
-        <View style={styles.inputContainer}>
-          <View>
-            <TextInput
-              style={[styles.input, { paddingLeft: 40 }]}
-              keyboardType="email-address"
-              value={userInfo.email}
-              placeholder="name@example.com"
-              onChangeText={(value) =>
-                setUserInfo({ ...userInfo, email: value })
-              }
-            />
-            <Fontisto
-              style={{ position: "absolute", left: 26, top: 17.8 }}
-              name="email"
-              size={20}
-              color={"#A1A1A1"}
-            />
-            {required && (
-              <View style={commonStyles.errorContainer}>
-                <Entypo name="cross" size={18} color={"red"} />
-              </View>
-            )}
-            <View style={{ marginTop: 15 }}>
+      <LinearGradient
+        colors={["#E5ECF9", "#F6F7F9"]}
+        style={{ flex: 1, paddingTop: 20 }}
+      >
+        <ScrollView>
+          <Image
+            style={styles.signInImage}
+            source={require("@/assets/sign-in/sign_in.png")}
+          />
+          <Text style={[styles.welcomeText, { fontFamily: "Raleway_700Bold" }]}>
+            Welcome Back!
+          </Text>
+          <Text style={styles.learningText}>
+            Login to your existing account
+          </Text>
+          <View style={styles.inputContainer}>
+            <View>
               <TextInput
-                style={commonStyles.input}
-                keyboardType="default"
-                secureTextEntry={!isPasswordVisible}
-                defaultValue=""
-                placeholder="********"
-                onChangeText={handlePasswordValidation}
+                style={[styles.input, { paddingLeft: 40 }]}
+                keyboardType="email-address"
+                value={userInfo.email}
+                placeholder="Enter your email address"
+                onChangeText={(value) =>
+                  setUserInfo({ ...userInfo, email: value })
+                }
               />
-              <TouchableOpacity
-                style={styles.visibleIcon}
-                onPress={() => setPasswordVisible(!isPasswordVisible)}
-              >
-                {isPasswordVisible ? (
-                  <Ionicons
-                    name="eye-off-outline"
-                    size={23}
-                    color={"#747474"}
-                  />
-                ) : (
-                  <Ionicons name="eye-outline" size={23} color={"#747474"} />
-                )}
-              </TouchableOpacity>
-              <SimpleLineIcons
-                style={styles.icon2}
-                name="lock"
+              <Fontisto
+                style={{ position: "absolute", left: 26, top: 17.8 }}
+                name="email"
                 size={20}
                 color={"#A1A1A1"}
               />
-            </View>
-            {error.password && (
-              <View style={[commonStyles.errorContainer, { top: 130 }]}>
-                <Entypo name="cross" size={18} color={"red"} />
-                <Text style={{ color: "red", fontSize: 11, marginTop: -1 }}>
-                  {error.password}
-                </Text>
-              </View>
-            )}
-            <TouchableOpacity
-              onPress={() => router.push("/(routes)/forgot-password")}
-            >
-              <Text
-                style={[
-                  styles.forgotSection,
-                  { fontFamily: "Nunito_600SemiBold" },
-                ]}
-              >
-                Forgot Password?
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                padding: 16,
-                borderRadius: 8,
-                marginHorizontal: 16,
-                backgroundColor: "#2467EC",
-                marginTop: 15,
-              }}
-              onPress={handleSignIn}
-            >
-              {buttonSpinner ? (
-                <ActivityIndicator size="small" color={"white"} />
-              ) : (
-                <Text
-                  style={{
-                    color: "white",
-                    textAlign: "center",
-                    fontSize: 16,
-                    fontFamily: "Raleway_700Bold",
-                  }}
-                >
-                  Sign In
-                </Text>
+              {required && (
+                <View style={commonStyles.errorContainer}>
+                  <Entypo name="cross" size={18} color={"red"} />
+                </View>
               )}
-            </TouchableOpacity>
-
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: 20,
-                gap: 10,
-              }}
-            >
-              <TouchableOpacity>
-                <FontAwesome name="google" size={30} />
-              </TouchableOpacity>
-              <TouchableOpacity>
-                <FontAwesome name="github" size={30} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.signupRedirect}>
-              <Text style={{ fontSize: 18, fontFamily: "Raleway_600SemiBold" }}>
-                Don't have an account?
-              </Text>
+              <View style={{ marginTop: 15 }}>
+                <TextInput
+                  style={commonStyles.input}
+                  keyboardType="default"
+                  secureTextEntry={!isPasswordVisible}
+                  defaultValue=""
+                  placeholder="********"
+                  onChangeText={handlePasswordValidation}
+                />
+                <TouchableOpacity
+                  style={styles.visibleIcon}
+                  onPress={() => setPasswordVisible(!isPasswordVisible)}
+                >
+                  {isPasswordVisible ? (
+                    <Ionicons
+                      name="eye-off-outline"
+                      size={23}
+                      color={"#747474"}
+                    />
+                  ) : (
+                    <Ionicons name="eye-outline" size={23} color={"#747474"} />
+                  )}
+                </TouchableOpacity>
+                <SimpleLineIcons
+                  style={styles.icon2}
+                  name="lock"
+                  size={20}
+                  color={"#A1A1A1"}
+                />
+              </View>
+              {error.password && (
+                <View style={[commonStyles.errorContainer, { top: 130 }]}>
+                  <Entypo name="cross" size={18} color={"red"} />
+                  <Text style={{ color: "red", fontSize: 11, marginTop: -1 }}>
+                    {error.password}
+                  </Text>
+                </View>
+              )}
               <TouchableOpacity
-                onPress={() => router.push("/(routes)/sign-up")}
+                onPress={() => router.push("/(routes)/forgot-password")}
               >
                 <Text
-                  style={{
-                    fontSize: 18,
-                    fontFamily: "Raleway_600SemiBold",
-                    color: "#2467EC",
-                    marginLeft: 5,
-                  }}
+                  style={[
+                    styles.forgotSection,
+                    { fontFamily: "Nunito_600SemiBold" },
+                  ]}
                 >
-                  Sign Up
+                  Forgot Password?
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{
+                  padding: 16,
+                  borderRadius: 8,
+                  marginHorizontal: 16,
+                  backgroundColor: "#2467EC",
+                  marginTop: 15,
+                }}
+                onPress={handleSignIn}
+              >
+                {buttonSpinner ? (
+                  <ActivityIndicator size="small" color={"white"} />
+                ) : (
+                  <Text
+                    style={{
+                      color: "white",
+                      textAlign: "center",
+                      fontSize: 16,
+                      fontFamily: "Raleway_700Bold",
+                    }}
+                  >
+                    Sign In
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginTop: 20,
+                  gap: 10,
+                }}
+              >
+                <TouchableOpacity>
+                  <FontAwesome name="google" size={30} />
+                </TouchableOpacity>
+                <TouchableOpacity>
+                  <FontAwesome name="github" size={30} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.signupRedirect}>
+                <Text
+                  style={{ fontSize: 18, fontFamily: "Raleway_600SemiBold" }}
+                >
+                  Don't have an account?
+                </Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/(routes)/sign-up")}
+                >
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontFamily: "Raleway_600SemiBold",
+                      color: "#2467EC",
+                      marginLeft: 5,
+                    }}
+                  >
+                    Sign Up
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </ScrollView>
-    </LinearGradient>
+        </ScrollView>
+      </LinearGradient>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -7,6 +7,8 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import {
   AntDesign,
@@ -44,8 +46,10 @@ export default function SignUpScreen() {
     email: "",
     password: "",
   });
-  const [required, setRequired] = useState("");
+
   const [error, setError] = useState({
+    email: "",
+    name: "",
     password: "",
   });
 
@@ -63,37 +67,54 @@ export default function SignUpScreen() {
   }
 
   const handlePasswordValidation = (value: string) => {
-    const password = value;
-    const passwordSixValue = /(?=.{6,})/;
-
-    if (!passwordSixValue.test(password)) {
-      setError({
-        ...error,
-        password: "Write at least 6 characters",
-      });
-      setUserInfo({ ...userInfo, password: "" });
-    } else {
-      setError({
-        ...error,
-        password: "",
-      });
-      setUserInfo({ ...userInfo, password: value });
-    }
+    setError({
+      ...error,
+      password: "",
+    });
+    setUserInfo({ ...userInfo, password: value });
   };
 
   const handleSignUp = async () => {
+    setError({ name: "", email: "", password: "" });
+
+    let isValid = true;
+
+    const newErrors = {
+      name: "",
+      email: "",
+      password: "",
+    };
+
+    // Validate name
+    if (!userInfo.name) {
+      newErrors.name = "Name is required";
+      isValid = false;
+    }
+
+    // Validate email
+    if (!userInfo.email) {
+      newErrors.email = "email is required";
+      isValid = false;
+    }
+
+    // Validate password
+    if (!userInfo.password) {
+      newErrors.password = "password is required";
+      isValid = false;
+    }
+    setError(newErrors);
+
+    if (!isValid) return;
     try {
       setButtonSpinner(true);
 
-      const res = await axios.post(`${SERVER_URI}/registration`, {
+      const res = await axios.post(`${SERVER_URI}/user/registration`, {
         name: userInfo.name,
         email: userInfo.email,
         password: userInfo.password,
       });
+
       await AsyncStorage.setItem("activation_token", res.data.activationToken);
-      Toast.show(res.data?.message, {
-        type: "success",
-      });
       setUserInfo({
         name: "",
         email: "",
@@ -101,9 +122,9 @@ export default function SignUpScreen() {
       });
       router.push("/(routes)/verifyAccount");
       setButtonSpinner(false);
-    } catch (error) {
-      console.log(error);
-      Toast.show("Email already exits!", {
+    } catch (error: any) {
+      console.log("Error", error.response?.data);
+      Toast.show(error?.response?.data.message || "An error occurred", {
         type: "danger",
       });
       setButtonSpinner(false);
@@ -111,66 +132,86 @@ export default function SignUpScreen() {
   };
 
   return (
-    <LinearGradient
-      colors={["#E5ECF9", "#F6F7F9"]}
-      style={{ flex: 1, paddingTop: 20 }}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView>
-        <Image
-          style={styles.signInImage}
-          source={require("@/assets/sign-in/signup.png")}
-        />
-        <Text style={[styles.welcomeText, { fontFamily: "Raleway_700Bold" }]}>
-          Hello, my friend
-        </Text>
-        <Text style={styles.learningText}>Create an account to started!</Text>
+      <LinearGradient
+        colors={["#E5ECF9", "#F6F7F9"]}
+        style={{ flex: 1, paddingTop: 20 }}
+      >
+        <ScrollView>
+          <Image
+            style={styles.signInImage}
+            source={require("@/assets/sign-in/signup.png")}
+          />
+          <Text style={[styles.welcomeText, { fontFamily: "Raleway_700Bold" }]}>
+            Hello, my friend
+          </Text>
+          <Text style={styles.learningText}>Create an account to started!</Text>
 
-        <View style={styles.inputContainer}>
-          <View>
-            <TextInput
-              style={[styles.input, { paddingLeft: 40, marginBottom: -12 }]}
-              keyboardType="email-address"
-              value={userInfo.email}
-              placeholder="Enter your name"
-              onChangeText={(value) =>
-                setUserInfo({ ...userInfo, email: value })
-              }
-            />
-            <AntDesign
-              style={{ position: "absolute", left: 26, top: 14 }}
-              name="user"
-              size={20}
-              color={"#A1A1A1"}
-            />
-          </View>
+          <View style={styles.inputContainer}>
+            <View>
+              <TextInput
+                style={[styles.input, { paddingLeft: 40}]}
+                keyboardType="default"
+                value={userInfo.name}
+                placeholder="Enter your name"
+                onChangeText={(value) =>
+                  setUserInfo({ ...userInfo, name: value })
+                }
+              />
+              <AntDesign
+                style={{ position: "absolute", left: 26, top: 14 }}
+                name="user"
+                size={20}
+                color={"#A1A1A1"}
+              />
+            </View>
 
-          <View>
-            <TextInput
-              style={[styles.input, { paddingLeft: 40 }]}
-              keyboardType="email-address"
-              value={userInfo.email}
-              placeholder="name@example.com"
-              onChangeText={(value) =>
-                setUserInfo({ ...userInfo, email: value })
-              }
-            />
-            <Fontisto
-              style={{ position: "absolute", left: 26, top: 17.8 }}
-              name="email"
-              size={20}
-              color={"#A1A1A1"}
-            />
-            {required && (
-              <View style={commonStyles.errorContainer}>
+            {error.name && (
+              <View style={[commonStyles.errorContainer, { top: 55 }]}>
                 <Entypo name="cross" size={18} color={"red"} />
+                <Text style={{ color: "red", fontSize: 11, marginTop: -1 }}>
+                  {error.name}
+                </Text>
               </View>
             )}
-            <View style={{ marginTop: 15 }}>
+
+            <View>
+              <TextInput
+                style={[styles.input, { paddingLeft: 40 }]}
+                keyboardType="email-address"
+                value={userInfo.email}
+                placeholder="name@example.com"
+                onChangeText={(value) =>
+                  setUserInfo({ ...userInfo, email: value })
+                }
+              />
+              <Fontisto
+                style={{ position: "absolute", left: 26, top: 17.8 }}
+                name="email"
+                size={20}
+                color={"#A1A1A1"}
+              />
+            </View>
+            
+            {error.email && (
+              <View style={[commonStyles.errorContainer, { top: 140 }]}>
+                <Entypo name="cross" size={18} color={"red"} />
+                <Text style={{ color: "red", fontSize: 11, marginTop: -1 }}>
+                  {error.email}
+                </Text>
+              </View>
+            )}
+
+            <View>
               <TextInput
                 style={commonStyles.input}
                 keyboardType="default"
                 secureTextEntry={!isPasswordVisible}
                 defaultValue=""
+                value={userInfo.password}
                 placeholder="********"
                 onChangeText={handlePasswordValidation}
               />
@@ -196,7 +237,7 @@ export default function SignUpScreen() {
               />
             </View>
             {error.password && (
-              <View style={[commonStyles.errorContainer, { top: 130 }]}>
+              <View style={[commonStyles.errorContainer, { top: 220 }]}>
                 <Entypo name="cross" size={18} color={"red"} />
                 <Text style={{ color: "red", fontSize: 11, marginTop: -1 }}>
                   {error.password}
@@ -210,7 +251,7 @@ export default function SignUpScreen() {
                 borderRadius: 8,
                 marginHorizontal: 16,
                 backgroundColor: "#2467EC",
-                marginTop: 15,
+                marginTop: 32,
               }}
               onPress={handleSignUp}
             >
@@ -228,25 +269,28 @@ export default function SignUpScreen() {
                   Sign Up
                 </Text>
               )}
+
+              
+
             </TouchableOpacity>
 
             <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: 20,
-                gap: 10,
-              }}
-            >
-              <TouchableOpacity>
-                <FontAwesome name="google" size={30} />
-              </TouchableOpacity>
-              <TouchableOpacity>
-                <FontAwesome name="github" size={30} />
-              </TouchableOpacity>
-            </View>
-
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginTop: 20,
+                  gap: 10,
+                }}
+              >
+                <TouchableOpacity>
+                  <FontAwesome name="google" size={30} />
+                </TouchableOpacity>
+                <TouchableOpacity>
+                  <FontAwesome name="github" size={30} />
+                </TouchableOpacity>
+              </View>
+              
             <View style={styles.signupRedirect}>
               <Text style={{ fontSize: 18, fontFamily: "Raleway_600SemiBold" }}>
                 Already have an account?
@@ -265,9 +309,9 @@ export default function SignUpScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </ScrollView>
-    </LinearGradient>
+        </ScrollView>
+      </LinearGradient>
+    </KeyboardAvoidingView>
   );
 }
 

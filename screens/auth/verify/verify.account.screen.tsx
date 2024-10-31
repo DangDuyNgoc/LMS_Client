@@ -4,6 +4,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import React, { useRef, useState } from "react";
 import { router } from "expo-router";
@@ -37,13 +39,17 @@ export default function VerifyAccountScreen() {
   };
 
   const handleSubmit = async () => {
+
+    
     try {
       const otp = code.join("");
       const activation_token = await AsyncStorage.getItem("activation_token");
 
-      const res = await axios.post(`${SERVER_URI}/active-user`, {
-        activation_token,
+      console.log("activation token", activation_token);
+
+      const res = await axios.post(`${SERVER_URI}/user/activate-user`, {
         activation_code: otp,
+        activation_token,
       });
 
       Toast.show(res.data?.message, {
@@ -51,47 +57,52 @@ export default function VerifyAccountScreen() {
       });
       setCode(new Array(4).fill(""));
       router.push("/(routes)/login");
-    } catch (error) {
-      console.log(error);
-      Toast.show("Your OTP is not valid or expired", {
+    } catch (error: any) {
+      console.log(error?.response?.data);
+      Toast.show(error?.response?.data?.message, {
         type: "danger",
       });
     }
   };
   return (
-    <View style={styles.container}>
-      <Text style={styles.headerText}>Verify Code</Text>
-      <Text style={styles.subText}>
-        We have sent verification code to your email address
-      </Text>
-      <View style={styles.inputContainer}>
-        {code.map((item, index) => (
-          <TextInput
-            key={index}
-            value={code[index]}
-            ref={inputs.current[index]}
-            autoFocus={index === 0}
-            maxLength={1}
-            keyboardType="number-pad"
-            style={styles.inputBox}
-            onChangeText={(text) => handleInput(text, index)}
-          />
-        ))}
-      </View>
-      <View style={{ marginTop: 10 }}>
-        <Button title="Submit" onPress={handleSubmit}></Button>
-      </View>
-      <View style={styles.loginLink}>
-        <Text style={[styles.backText, { fontFamily: "Nunito_700Bold" }]}>
-          Back To?
+    <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <View style={styles.container}>
+        <Text style={styles.headerText}>Verify Code</Text>
+        <Text style={styles.subText}>
+          We have sent verification code to your email address
         </Text>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={[styles.loginText, { fontFamily: "Nunito_700Bold" }]}>
-            Sign Up
+        <View style={styles.inputContainer}>
+          {code.map((item, index) => (
+            <TextInput
+              key={index}
+              value={code[index]}
+              ref={inputs.current[index]}
+              autoFocus={index === 0}
+              maxLength={1}
+              keyboardType="number-pad"
+              style={styles.inputBox}
+              onChangeText={(text) => handleInput(text, index)}
+            />
+          ))}
+        </View>
+        <View style={{ marginTop: 10 }}>
+          <Button title="Submit" onPress={handleSubmit}></Button>
+        </View>
+        <View style={styles.loginLink}>
+          <Text style={[styles.backText, { fontFamily: "Nunito_700Bold" }]}>
+            Back To?
           </Text>
-        </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={[styles.loginText, { fontFamily: "Nunito_700Bold" }]}>
+              Sign Up
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

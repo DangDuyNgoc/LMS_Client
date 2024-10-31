@@ -21,6 +21,9 @@
         "backgroundColor": "#ffffff"
       }
     },
+    "extra": {
+      "API_URL": "https://localhost/8080/api"
+    },
     "web": {
       "bundler": "metro",
       "output": "static",

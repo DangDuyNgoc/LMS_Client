@@ -58,6 +58,6 @@ export const commonStyles = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 16,
     position: "absolute",
-    top: 60,
+    top: 10,
   },
 });
