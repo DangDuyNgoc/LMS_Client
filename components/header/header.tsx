@@ -1,11 +1,24 @@
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { Raleway_700Bold } from "@expo-google-fonts/raleway";
 import useUser from "@/hook/auth/useUser";
 import { Feather } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 export default function Header() {
+
+  const [cartItems, setCartItems] = useState([]);
+
+  useEffect(() => {
+    const subscription = async () => {
+      const cart: any = await AsyncStorage.getItem("cart");
+      setCartItems(JSON.parse(cart));
+    };
+    subscription();
+  }, []);
+
   const { user } = useUser();
   let [fontsLoaded, fontError] = useFonts({
     Raleway_700Bold,
@@ -36,10 +49,14 @@ export default function Header() {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.bellButton}>
+      <TouchableOpacity style={styles.bellButton} onPress={() => router.push("/(routes)/cart")}>
         <View>
           <Feather name="shopping-bag" size={26} color={"black"} />
-          <View style={styles.bellContainer}></View>
+          <View style={styles.bellContainer}>
+          <Text style={{ color: "#fff", fontSize: 14 }}>
+              {cartItems?.length}
+            </Text>
+          </View>
         </View>
       </TouchableOpacity>
     </View>

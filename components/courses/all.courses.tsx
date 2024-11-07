@@ -25,15 +25,11 @@ export default function AllCourses() {
     Nunito_500Medium,
   });
 
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
-
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         const res = await axios.get(`${SERVER_URI}/course/get-courses`);
-        setCourses(res.data.courses);
+        setCourses(res.data.course);
       } catch (error) {
         console.log(error);
       }
@@ -41,6 +37,10 @@ export default function AllCourses() {
 
     fetchCourses();
   }, []);
+
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
 
   return (
     <View style={{ flex: 1, marginHorizontal: 16 }}>
@@ -72,13 +72,12 @@ export default function AllCourses() {
           </Text>
         </TouchableOpacity>
       </View>
-      <FlatList 
+      <FlatList
         ref={flatListRef}
         data={courses}
-        horizontal={true}
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item._id.toString()}
-        renderItem={({item}) => <CourseCard item={item}/>}
+        renderItem={({ item }) => <CourseCard item={item} />}
       />
     </View>
   );

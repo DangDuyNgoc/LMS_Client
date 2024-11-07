@@ -153,7 +153,7 @@ export default function SignUpScreen() {
           <View style={styles.inputContainer}>
             <View>
               <TextInput
-                style={[styles.input, { paddingLeft: 40}]}
+                style={[styles.input, { paddingLeft: 40 }]}
                 keyboardType="default"
                 value={userInfo.name}
                 placeholder="Enter your name"
@@ -195,7 +195,7 @@ export default function SignUpScreen() {
                 color={"#A1A1A1"}
               />
             </View>
-            
+
             {error.email && (
               <View style={[commonStyles.errorContainer, { top: 140 }]}>
                 <Entypo name="cross" size={18} color={"red"} />
@@ -251,7 +251,7 @@ export default function SignUpScreen() {
                 borderRadius: 8,
                 marginHorizontal: 16,
                 backgroundColor: "#2467EC",
-                marginTop: 32,
+                marginTop: 12,
               }}
               onPress={handleSignUp}
             >
@@ -269,28 +269,24 @@ export default function SignUpScreen() {
                   Sign Up
                 </Text>
               )}
-
-              
-
             </TouchableOpacity>
 
-            <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginTop: 20,
-                  gap: 10,
-                }}
-              >
-                <TouchableOpacity>
-                  <FontAwesome name="google" size={30} />
-                </TouchableOpacity>
-                <TouchableOpacity>
-                  <FontAwesome name="github" size={30} />
-                </TouchableOpacity>
-              </View>
-              
+            {/* <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+              }}
+            >
+              <TouchableOpacity>
+                <FontAwesome name="google" size={30} />
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <FontAwesome name="github" size={30} />
+              </TouchableOpacity>
+            </View> */}
+
             <View style={styles.signupRedirect}>
               <Text style={{ fontSize: 18, fontFamily: "Raleway_600SemiBold" }}>
                 Already have an account?
@@ -368,6 +364,5 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     justifyContent: "center",
     marginBottom: 20,
-    marginTop: 20,
   },
 });

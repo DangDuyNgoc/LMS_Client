@@ -46,6 +46,7 @@ export default function LoginScreen() {
   });
   const [required, setRequired] = useState("");
   const [error, setError] = useState({
+    email: "",
     password: "",
   });
 
@@ -71,6 +72,30 @@ export default function LoginScreen() {
   };
 
   const handleSignIn = async () => {
+    setError({ email: "", password: "" });
+
+    let isValid = true;
+
+    const newErrors = {
+      email: "",
+      password: "",
+    };
+
+    // Validate email
+    if (!userInfo.email) {
+      newErrors.email = "Please enter your email address";
+      isValid = false;
+    }
+
+    // Validate password
+    if (!userInfo.password) {
+      newErrors.password = "Please enter your password";
+      isValid = false;
+    }
+
+    setError(newErrors);
+
+    if (!isValid) return;
     try {
       const res = await axios.post(`${SERVER_URI}/user/login-user`, {
         email: userInfo.email,
@@ -127,9 +152,12 @@ export default function LoginScreen() {
                 size={20}
                 color={"#A1A1A1"}
               />
-              {required && (
-                <View style={commonStyles.errorContainer}>
+              {error.email && (
+                <View style={[commonStyles.errorContainer, { top: 55 }]}>
                   <Entypo name="cross" size={18} color={"red"} />
+                  <Text style={{ color: "red", fontSize: 11, marginTop: -1 }}>
+                    {error.email}
+                  </Text>
                 </View>
               )}
               <View style={{ marginTop: 15 }}>

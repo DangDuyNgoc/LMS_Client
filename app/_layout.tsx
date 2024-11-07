@@ -5,9 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
 
-import { View } from "react-native";
 import { ToastProvider } from "react-native-toast-notifications";
-import TabsLayout from "./(tabs)/_layout";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -55,11 +53,20 @@ function RootLayoutNav() {
         <Stack.Screen name="(routes)/login/index" />
         <Stack.Screen name="(routes)/sign-up/index" />
         <Stack.Screen name="(routes)/forgot-password/index" />
-        <Stack.Screen name="(routes)/course-details/index" 
+        <Stack.Screen
+          name="(routes)/course-details/index"
           options={{
             headerShown: true,
             title: "Course Details",
-            headerBackTitle: "Back"
+            headerBackTitle: "Back",
+          }}
+        />
+        <Stack.Screen
+          name="(routes)/cart/index"
+          options={{
+            headerShown: true,
+            title: "Course Details",
+            headerBackTitle: "Back",
           }}
         />
       </Stack>

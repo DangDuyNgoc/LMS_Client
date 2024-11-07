@@ -3,12 +3,31 @@ import React, { useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { FontAwesome } from "@expo/vector-icons";
+import CourseLessons from "@/components/courses/course.lessons";
+import ReviewCard from "@/components/cards/review.card";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 export default function CourseDetailsScreen() {
   const { item } = useLocalSearchParams();
   const courseData: CoursesType = JSON.parse(item as string);
   const [activeButton, setActiveButton] = useState("About");
   const [isExpanded, setIsExpanded] = useState(false);
+  const [checkPurchased, setCheckPurchased] = useState(false);
+
+  const handleAddToCart = async () => {
+    const existingCartData = await AsyncStorage.getItem("cart");
+    const cartData = existingCartData ? JSON.parse(existingCartData) : [];
+    const itemExists = cartData.some(
+      (item: any) => item._id === courseData._id
+    );
+    if (!itemExists) {
+      cartData.push(courseData);
+      await AsyncStorage.setItem("cart", JSON.stringify(cartData));
+    }
+    router.push("/(routes)/cart");
+  };
+
   return (
     <LinearGradient
       colors={["#E5ECF9", "#F6F7F9"]}
@@ -146,18 +165,18 @@ export default function CourseDetailsScreen() {
               paddingVertical: 10,
               paddingHorizontal: 42,
               backgroundColor:
-                activeButton === "Lesson" ? "#2467EC" : "transparent",
-              borderRadius: activeButton === "Lesson" ? 50 : 0,
+                activeButton === "Lessons" ? "#2467EC" : "transparent",
+              borderRadius: activeButton === "Lessons" ? 50 : 0,
             }}
-            onPress={() => setActiveButton("Lesson")}
+            onPress={() => setActiveButton("Lessons")}
           >
             <Text
               style={{
-                color: activeButton === "Lesson" ? "#fff" : "#000",
+                color: activeButton === "Lessons" ? "#fff" : "#000",
                 fontFamily: "Nunito_600SemiBold",
               }}
             >
-              Lesson
+              Lessons
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -172,7 +191,7 @@ export default function CourseDetailsScreen() {
           >
             <Text
               style={{
-                color: activeButton === "Reviews" ? "#fff" : "",
+                color: activeButton === "Reviews" ? "#fff" : "#000",
                 fontFamily: "Nunito_600SemiBold",
               }}
             >
@@ -215,14 +234,84 @@ export default function CourseDetailsScreen() {
                     fontSize: 14,
                   }}
                 >
-                    {isExpanded ? "Show Less" : "Show More"}
-                    {isExpanded ? "-" : "+"}
+                  {isExpanded ? "Show Less" : "Show More"}
+                  {isExpanded ? "-" : "+"}
                 </Text>
               </TouchableOpacity>
             )}
           </View>
         )}
+
+        {activeButton === "Lessons" && (
+          <View
+            style={{
+              marginHorizontal: 16,
+              marginVertical: 25,
+            }}
+          >
+            <CourseLessons courseDetails={courseData} />
+          </View>
+        )}
+
+        {activeButton === "Reviews" && (
+          <View style={{ marginHorizontal: 16, marginVertical: 25 }}>
+            <View style={{ rowGap: 25 }}>
+              {courseData?.reviews?.map((item: ReviewType, index: number) => (
+                <ReviewCard item={item} key={index} />
+              ))}
+            </View>
+          </View>
+        )}
       </ScrollView>
+      <View
+        style={{
+          backgroundColor: "#FFFF",
+          marginHorizontal: 16,
+          paddingVertical: 11,
+          marginBottom: 10,
+        }}
+      >
+        {checkPurchased === true ? (
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#2467EC",
+              paddingVertical: 16,
+              borderRadius: 4,
+            }}
+          >
+            <Text
+              style={{
+                textAlign: "center",
+                color: "#FFFF",
+                fontSize: 16,
+                fontFamily: "Nunito_600SemiBold",
+              }}
+            >
+              Go to the course
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#2467EC",
+              paddingVertical: 16,
+              borderRadius: 4,
+            }}
+            onPress={() => handleAddToCart()}
+          >
+            <Text
+              style={{
+                textAlign: "center",
+                color: "#FFFF",
+                fontSize: 16,
+                fontFamily: "Nunito_600SemiBold",
+              }}
+            >
+              Add to cart
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </LinearGradient>
   );
 }
