@@ -7,6 +7,11 @@ type onboardingSwiperDataType = {
   image: any;
 };
 
+type Avatar = {
+  public_id: string;
+  url: string;
+}
+
 type User = {
   _id: string;
   name: string;

@@ -13,7 +13,7 @@ export default function HomeScreen() {
       style={{ flex: 1, paddingTop: 50 }}
     >
       <Header />
-      <SearchInput />
+      <SearchInput homeScreen = {true}/>
       <ScrollView showsVerticalScrollIndicator={false}>
         <HomeBannerSlider />
         <AllCourses />

@@ -52,6 +52,10 @@ export default function CartScreen() {
     setCartItems(updatedCartData);
   };
 
+  const handlePayment = async () => {
+    
+  }
+
   return (
     <LinearGradient
       colors={["#E5ECF9", "#F6F7F9"]}
@@ -242,6 +246,7 @@ export default function CartScreen() {
                     width: "80%",
                     alignSelf: "center",
                   }}
+                  onPress={() => handlePayment()}
                 >
                   <Text
                     style={{

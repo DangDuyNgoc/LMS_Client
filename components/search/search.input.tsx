@@ -1,10 +1,53 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from "react-native";
-import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+} from "react-native";
+import React, { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { Nunito_700Bold } from "@expo-google-fonts/nunito";
 import { AntDesign } from "@expo/vector-icons";
+import axios from "axios";
+import { SERVER_URI } from "@/utils/uri";
+import { router } from "expo-router";
+import { widthPercentageToDP } from "react-native-responsive-screen";
 
-export default function SearchInput() {
+export default function SearchInput({ homeScreen }: { homeScreen?: boolean }) {
+  const [value, setValue] = useState("");
+  const [courses, setCourses] = useState([]);
+  const [filteredCourses, setFilteredCourses] = useState([]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await axios.get(`${SERVER_URI}/course/get-courses`);
+        setCourses(res.data.course);
+
+        if (!homeScreen) {
+          setFilteredCourses(res.data.course);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    if (homeScreen && value === "") {
+      setFilteredCourses([]);
+    } else if (value) {
+      const filtered = courses.filter((course: CoursesType) =>
+        course.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredCourses(filtered);
+    } else if (!homeScreen) {
+      setFilteredCourses(courses);
+    }
+  }, [value, courses]);
+
   let [fontsLoaded, fontError] = useFonts({
     Nunito_700Bold,
   });
@@ -12,15 +55,33 @@ export default function SearchInput() {
   if (!fontsLoaded && !fontError) {
     return null;
   }
+
+  const renderCourseItem = ({item} : {item: CoursesType}) => (
+    <TouchableOpacity
+    style={{
+      backgroundColor: "#fff",
+      padding: 10,
+      width: widthPercentageToDP("90%"),
+      marginLeft: "1.5%",
+      flexDirection: "row",
+    }}
+    onPress={() => router.push("/(routes)/course-details")}
+    >
+
+    </TouchableOpacity>
+  )
   return (
     <View style={styles.filteringContainer}>
       <View style={styles.searchContainer}>
-        <TextInput style={[styles.input, {fontFamily: "Nunito_700QBold"}]}
-            placeholder="Search here....."
-            placeholderTextColor={"#C67cc"}
+        <TextInput
+          style={[styles.input, { fontFamily: "Nunito_700QBold" }]}
+          value={value}
+          onChangeText={setValue}
+          placeholder="Search here....."
+          placeholderTextColor={"#C67cc"}
         />
         <TouchableOpacity style={styles.searchIconContainer}>
-            <AntDesign name="search1" size={20} color="#fff"/>
+          <AntDesign name="search1" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
     </View>

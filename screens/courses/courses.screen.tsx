@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, FlatList } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SERVER_URI } from "@/utils/uri";
 import axios from "axios";
@@ -20,7 +20,7 @@ import CourseCard from "@/components/cards/course.card";
 export default function CoursesScreen() {
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState<CoursesType[]>([]);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<{ title: string }[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [originalCourses, setOriginalCourses] = useState<CoursesType[]>([]);
 
@@ -89,41 +89,30 @@ export default function CoursesScreen() {
           style={{ flex: 1, paddingTop: 65 }}
         >
           <View style={{ padding: 10 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <TouchableOpacity
-                style={{
-                  padding: 10,
-                  backgroundColor:
-                    activeCategory === "All" ? "#2467EC" : "#000",
-                  borderRadius: 20,
-                  paddingHorizontal: 20,
-                  marginRight: 5,
-                }}
-              >
-                <Text
-                  style={{ color: "#fff", fontSize: 18, fontWeight: "600" }}
-                >
-                  All
-                </Text>
-              </TouchableOpacity>
-              {categories.map((i: any, index: number) => (
+            <FlatList
+              horizontal
+              data={[{ title: "All" }, ...categories]}
+              keyExtractor={(item) => item.title}
+              renderItem={({ item }) => (
                 <TouchableOpacity
-                  key={index}
                   style={{
                     padding: 10,
-                    backgroundColor:
-                      activeCategory === i?.title ? "#2467EC" : "#000",
-                    borderRadius: 50,
+                    backgroundColor: activeCategory === item.title ? "#2467EC" : "#000",
+                    borderRadius: 20,
                     paddingHorizontal: 20,
-                    marginHorizontal: 15,
-                    justifyContent: "center"
+                    marginRight: 5,
                   }}
-                  onPress={() => handleCategories(i?.title)}
+                  onPress={() => {
+                    if (activeCategory !== item.title) handleCategories(item.title);
+                  }}
                 >
-                  <Text style={{ color: "#fff", fontSize: 18, fontWeight: "600" }}>{i?.title}</Text>
+                  <Text style={{ color: "#fff", fontSize: 18, fontWeight: "600" }}>
+                    {item.title}
+                  </Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              )}
+              showsHorizontalScrollIndicator={false}
+            />
           </View>
           <View>
             <ScrollView style={{ marginHorizontal: 15, gap: 12 }}>

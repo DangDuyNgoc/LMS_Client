@@ -110,7 +110,7 @@ export default function LoginScreen() {
     } catch (error: any) {
       console.log("Login failed:", error.response.data.message);
       Toast.show(error.response.data.message, {
-        type: "danger",
+      type: "danger",
       });
     }
   };
