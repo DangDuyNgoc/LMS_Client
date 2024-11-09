@@ -11,18 +11,22 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { Entypo, FontAwesome } from "@expo/vector-icons";
 import { router } from "expo-router";
+import axios from "axios";
+import { SERVER_URI } from "@/utils/uri";
+import { useStripe } from "@stripe/stripe-react-native";
 
 export default function CartScreen() {
   const [cartItems, setCartItems] = useState<CoursesType[]>([]);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   useEffect(() => {
-    const loadCartData  = async () => {
+    const loadCartData = async () => {
       const cart: any = await AsyncStorage.getItem("cart");
       setCartItems(cart ? JSON.parse(cart) : []);
     };
-    loadCartData ();
+    loadCartData();
   }, []);
 
   const onRefresh = async () => {
@@ -52,9 +56,77 @@ export default function CartScreen() {
     setCartItems(updatedCartData);
   };
 
+  const createOrder = async (paymentResponse: any) => {
+    const accessToken = await AsyncStorage.getItem("access_token");
+    const refreshToken = await AsyncStorage.getItem("refresh_token");
+    try {
+      const res = await axios.post(
+        `${SERVER_URI}/order/create-order`,
+        {
+          courseId: cartItems[0]._id,
+          paymentInfo: paymentResponse,
+        },
+        {
+          headers: {
+            "access-token": accessToken,
+            "refresh-token": refreshToken,
+          },
+        }
+      );
+
+      setOrderSuccess(true);
+      AsyncStorage.removeItem("cart");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handlePayment = async () => {
-    
-  }
+    try {
+      const accessToken = await AsyncStorage.getItem("access_token");
+      const refreshToken = await AsyncStorage.getItem("refresh_token");
+      const amount = Math.round(
+        cartItems.reduce((total, item) => total + item.price, 0)
+      );
+
+      const paymentIntentResponse = await axios.post(
+        `${SERVER_URI}/order/payment`,
+        { amount },
+        {
+          headers: {
+            "access-token": accessToken,
+            "refresh-token": refreshToken,
+          },
+        }
+      );
+
+      const { paymentIntent: clientSecret } = paymentIntentResponse.data;
+
+      const initSheetResponse = await initPaymentSheet({
+        merchantDisplayName: "Tran Van Duc LMS",
+        paymentIntentClientSecret: clientSecret,
+      });
+
+      if (initSheetResponse.error) {
+        console.error(
+          "Error initializing payment sheet:",
+          initSheetResponse.error
+        );
+        return;
+      }
+
+      // present payment sheet for user
+      const paymentResponse = await presentPaymentSheet();
+
+      if (paymentResponse.error) {
+        console.error("Error presenting payment sheet:", paymentResponse.error);
+      } else {
+        await createOrder(paymentResponse);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <LinearGradient
@@ -74,6 +146,26 @@ export default function CartScreen() {
               marginBottom: 20,
             }}
           />
+          <View style={{ alignItems: "center", marginBottom: 20 }}>
+            <Text style={{ fontSize: 22, fontFamily: "Raleway_700Bold" }}>
+              Payment Successful!
+            </Text>
+            <Text
+              style={{
+                fontSize: 15,
+                marginTop: 5,
+                color: "#575757",
+                fontFamily: "Nunito_400Regular",
+              }}
+            >
+              Thank you for your purchase!
+            </Text>
+          </View>
+          <View style={{ alignItems: "center", marginBottom: 20 }}>
+            <Text style={{ fontSize: 16, color: "575757" }}>
+              You will receive one email shortly!
+            </Text>
+          </View>
         </View>
       ) : (
         <>

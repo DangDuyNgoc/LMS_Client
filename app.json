@@ -22,7 +22,8 @@
       }
     },
     "extra": {
-      "API_URL": "https://localhost/8080/api"
+      "API_URL": "https://localhost/8080/api",
+      "EXPO_PUBLIC_STRIPE__PUBLISHABLE_KEY": "pk_test_51PiS7iDDtMfu9MHZ3YR6DzQkukHkMxMfLVSxaIoUqDIDJEU7aSQGjuJnpD4sBzOrQvwblpqpd6n065psbDICMpyF00GbgvWZAM",
     },
     "web": {
       "bundler": "metro",
