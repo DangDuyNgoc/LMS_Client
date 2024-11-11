@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { FontAwesome } from "@expo/vector-icons";
@@ -7,13 +7,21 @@ import CourseLessons from "@/components/courses/course.lessons";
 import ReviewCard from "@/components/cards/review.card";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import useUser from "@/hook/auth/useUser";
 
 export default function CourseDetailsScreen() {
   const { item } = useLocalSearchParams();
+  const { user } = useUser();
   const courseData: CoursesType = JSON.parse(item as string);
   const [activeButton, setActiveButton] = useState("About");
   const [isExpanded, setIsExpanded] = useState(false);
   const [checkPurchased, setCheckPurchased] = useState(false);
+
+  useEffect(() => {
+    if (user?.courses?.find((i: any) => i._id === courseData._id)) {
+      setCheckPurchased(true);
+    }
+  }, [user]);
 
   const handleAddToCart = async () => {
     const existingCartData = await AsyncStorage.getItem("cart");
@@ -278,6 +286,12 @@ export default function CourseDetailsScreen() {
               paddingVertical: 16,
               borderRadius: 4,
             }}
+            onPress={() =>
+              router.push({
+                pathname: "/(routes)/course-access",
+                params: { courseData: JSON.stringify(courseData) },
+              })
+            }
           >
             <Text
               style={{

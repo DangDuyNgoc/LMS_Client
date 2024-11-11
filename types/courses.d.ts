@@ -31,6 +31,7 @@ type CourseDataType = {
   questions: CommentType[];
 };
 
+
 type BenefitType = {
   title: string;
 };
