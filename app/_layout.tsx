@@ -77,6 +77,14 @@ function RootLayoutNav() {
             headerBackTitle: "Back",
           }}
         />
+        <Stack.Screen
+          name="(routes)/enrolled-courses/index"
+          options={{
+            headerShown: true,
+            title: "Enrolled Courses",
+            headerBackTitle: "Back",
+          }}
+        />
       </Stack>
     </ToastProvider>
   );

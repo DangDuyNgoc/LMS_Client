@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import useUser from "@/hook/auth/useUser";
 import Loader from "@/components/loader/loader";
@@ -19,9 +19,67 @@ import {
   Nunito_600SemiBold,
   Nunito_700Bold,
 } from "@expo-google-fonts/nunito";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { SERVER_URI } from "@/utils/uri";
+import { router } from "expo-router";
 
 export default function ProfileScreen() {
-  const { user, loading } = useUser();
+  const { user, loading, setRefetch } = useUser();
+  const [image, setImage] = useState<any>(null);
+  const [loader, setLoader] = useState(false);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const base64 = await FileSystem.readAsStringAsync(result.assets[0].uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      setLoader(true);
+      const base64Image = `data:image/png;base64,${base64}`;
+      setImage(base64Image);
+
+      const accessToken = await AsyncStorage.getItem("access_token");
+      const refreshToken = await AsyncStorage.getItem("refresh_token");
+
+      try {
+        const res = await axios.post(
+          `${SERVER_URI}/user/update-avatar`,
+          {
+            avatar: base64Image,
+          },
+          {
+            headers: {
+              "access-token": accessToken,
+              "refresh-token": refreshToken,
+            },
+          }
+        );
+
+        if (res.data) {
+          setRefetch(true);
+          setLoader(false);
+        }
+      } catch (error) {
+        setLoader(false);
+        console.log(error);
+      }
+    }
+  };
+
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem("access_token");
+    await AsyncStorage.removeItem("refresh_token");
+    router.push("/(routes)/login");
+  };
 
   let [fontsLoaded, fontError] = useFonts({
     Raleway_600SemiBold,
@@ -37,7 +95,7 @@ export default function ProfileScreen() {
 
   return (
     <>
-      {loading ? (
+      {loading || loader ? (
         <Loader />
       ) : (
         <LinearGradient
@@ -50,6 +108,7 @@ export default function ProfileScreen() {
                 <Image
                   source={{
                     uri:
+                      image ||
                       user?.avatar?.url ||
                       "https://asset.cloudinary.com/dsfdghxx4/4d712a625f4591eb7056508061dcf428",
                   }}
@@ -68,6 +127,7 @@ export default function ProfileScreen() {
                     alignItems: "center",
                     justifyContent: "center",
                   }}
+                  onPress={pickImage}
                 >
                   <Ionicons name="camera-outline" size={25} />
                 </TouchableOpacity>
@@ -152,6 +212,7 @@ export default function ProfileScreen() {
                   justifyContent: "space-between",
                   marginBottom: 20,
                 }}
+                onPress={() => router.push("/(routes)/enrolled-courses")}
               >
                 <View
                   style={{
@@ -230,7 +291,7 @@ export default function ProfileScreen() {
                       color={"black"}
                     />
                   </View>
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleLogout()}>
                     <Text>Log out</Text>
                   </TouchableOpacity>
                 </View>

@@ -18,11 +18,13 @@ import useUser from "@/hook/auth/useUser";
 import { SERVER_URI } from "@/utils/uri";
 import QuestionsCard from "@/components/cards/question.card";
 import { Toast } from "react-native-toast-notifications";
+import { FontAwesome } from "@expo/vector-icons";
+import ReviewCard from "@/components/cards/review.card";
 
 export default function CourseAccessScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const { courseData } = useLocalSearchParams();
-  const { user, loading } = useUser();
+  const { user } = useUser();
   const data: CoursesType = JSON.parse(courseData as string);
   const [courseContentData, setCourseContentData] = useState<CourseDataType[]>(
     []
@@ -31,10 +33,20 @@ export default function CourseAccessScreen() {
   const [activeButton, setActiveButton] = useState("About");
   const [isExpanded, setIsExpanded] = useState(false);
   const [question, setQuestion] = useState("");
+  const [review, setReview] = useState("");
+  const [rating, setRating] = useState(1);
+  const [reviewAvailable, setReviewAvailable] = useState(false);
 
   useEffect(() => {
     const subscription = async () => {
       await fetchCourseContent();
+      const isReviewAvailable = data?.reviews?.find(
+        (i: any) => i.user._id === user?._id
+      );
+
+      if (isReviewAvailable) {
+        setReviewAvailable(true);
+      }
     };
     subscription();
   });
@@ -91,9 +103,56 @@ export default function CourseAccessScreen() {
     }
   };
 
+  const handleReviewSubmit = async () => {
+    const accessToken = await AsyncStorage.getItem("access_token");
+    const refreshToken = await AsyncStorage.getItem("refresh_token");
+
+    try {
+      await axios.post(
+        `${SERVER_URI}/course/add-review${data._id}`,
+        {
+          review,
+          rating,
+        },
+        {
+          headers: {
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          },
+        }
+      );
+
+      setRating(1);
+      setReview("");
+      router.push({
+        pathname: "/(routes)/course-details",
+        params: { item: JSON.stringify(data) },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const renderStars = () => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <TouchableOpacity key={i} onPress={() => setRating(i)}>
+          <FontAwesome
+            name={i <= rating ? "star" : "star-o"}
+            size={25}
+            color={"#FF8D07"}
+            style={{ marginHorizontal: 4, marginTop: -5 }}
+          />
+        </TouchableOpacity>
+      );
+    }
+    return stars;
+  };
+
   return (
     <>
-      {loading ? (
+      {isLoading ? (
         <Loader />
       ) : (
         <ScrollView stickyHeaderIndices={[0]} style={{ flex: 1, padding: 10 }}>
@@ -291,6 +350,68 @@ export default function CourseAccessScreen() {
                       contentId={courseContentData[activeVideoData]._id}
                     />
                   ))}
+              </View>
+            </View>
+          )}
+
+          {activeButton === "Reviews" && (
+            <View style={{ marginHorizontal: 16, marginVertical: 25 }}>
+              {!reviewAvailable && (
+                <View>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        paddingBottom: 10,
+                        paddingLeft: 2,
+                        paddingRight: 5,
+                      }}
+                    >
+                      Give Rating:
+                    </Text>
+                    {renderStars()}
+                  </View>
+                  <TextInput
+                    value={review}
+                    onChangeText={setReview}
+                    style={{
+                      flex: 1,
+                      textAlignVertical: "top",
+                      justifyContent: "flex-start",
+                      backgroundColor: "white",
+                      borderRadius: 10,
+                      height: 100,
+                      padding: 10,
+                    }}
+                    multiline={true}
+                    placeholder="Give review....."
+                  />
+                  <View
+                    style={{ flexDirection: "row", justifyContent: "flex-end" }}
+                  >
+                    <TouchableOpacity
+                      style={[styles.button]}
+                      disabled={review === ""}
+                      onPress={() => handleReviewSubmit()}
+                    >
+                      <Text
+                        style={{
+                          color: "#fff",
+                          fontSize: 18,
+                          fontWeight: "600",
+                        }}
+                      >
+                        Submit
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              <View style={{ rowGap: 25 }}>
+                {data?.reviews?.map((item: ReviewType, index: number) => (
+                  <ReviewCard item={item} key={index} />
+                ))}
               </View>
             </View>
           )}
