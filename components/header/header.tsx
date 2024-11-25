@@ -8,16 +8,22 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 
 export default function Header() {
-
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState<any[]>([]);
 
   useEffect(() => {
-    const subscription = async () => {
-      const cart: any = await AsyncStorage.getItem("cart");
-      setCartItems(JSON.parse(cart));
+    const loadCartData = async () => {
+      try {
+        const cart = await AsyncStorage.getItem("cart");
+        setCartItems(cart ? JSON.parse(cart) : []);
+      } catch (error) {
+        console.error("Error loading cart data:", error);
+        setCartItems([]);
+      }
     };
-    subscription();
+    loadCartData();
   }, []);
+
+  console.log("cart length in header: ", cartItems);
 
   const { user } = useUser();
   let [fontsLoaded, fontError] = useFonts({
@@ -49,14 +55,19 @@ export default function Header() {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.bellButton} onPress={() => router.push("/(routes)/cart")}>
+      <TouchableOpacity
+        style={styles.bellButton}
+        onPress={() => router.push("/(routes)/cart")}
+      >
         <View>
           <Feather name="shopping-bag" size={26} color={"black"} />
-          <View style={styles.bellContainer}>
-          <Text style={{ color: "#fff", fontSize: 14 }}>
-              {cartItems?.length}
-            </Text>
-          </View>
+          {cartItems.length > 0 && (
+            <View style={styles.bellContainer}>
+              <Text style={{ color: "#fff", fontSize: 14 }}>
+                {cartItems?.length}
+              </Text>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     </View>

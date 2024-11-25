@@ -44,7 +44,6 @@ export default function LoginScreen() {
     email: "",
     password: "",
   });
-  const [required, setRequired] = useState("");
   const [error, setError] = useState({
     email: "",
     password: "",
@@ -96,24 +95,30 @@ export default function LoginScreen() {
     setError(newErrors);
 
     if (!isValid) return;
+    setButtonSpinner(true);
     try {
       const res = await axios.post(`${SERVER_URI}/user/login-user`, {
         email: userInfo.email,
         password: userInfo.password,
       });
-      Toast.show(res.data?.message, {
+      Toast.show("Login Successfully!", {
         type: "success",
+        placement: "top"
       });
       router.push("/(tabs)");
       await AsyncStorage.setItem("access_token", res.data.accessToken);
+      await AsyncStorage.setItem("user_id", res.data.user._id); 
       await AsyncStorage.setItem("refresh_token", res.data.refreshToken);
+      setButtonSpinner(false);
     } catch (error: any) {
       console.log("Login failed:", error.response.data.message);
       Toast.show(error.response.data.message, {
       type: "danger",
       });
+      setButtonSpinner(false);
     }
   };
+
 
   return (
     <KeyboardAvoidingView
@@ -236,23 +241,6 @@ export default function LoginScreen() {
                   </Text>
                 )}
               </TouchableOpacity>
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginTop: 20,
-                  gap: 10,
-                }}
-              >
-                <TouchableOpacity>
-                  <FontAwesome name="google" size={30} />
-                </TouchableOpacity>
-                <TouchableOpacity>
-                  <FontAwesome name="github" size={30} />
-                </TouchableOpacity>
-              </View>
 
               <View style={styles.signupRedirect}>
                 <Text

@@ -6,6 +6,7 @@ type CommentType = {
 };
 
 type ReviewType = {
+  _id: string;
   user: User;
   rating?: number;
   comment: string;
@@ -29,14 +30,7 @@ type CourseDataType = {
   links: LinkType[];
   suggestion: string;
   questions: CommentType[];
-};
-
-type BenefitType = {
-  title: string;
-};
-
-type PrerequisiteType = {
-  title: string;
+  reviews: ReviewType[];
 };
 
 type CoursesType = {
@@ -53,10 +47,8 @@ type CoursesType = {
   tags: string;
   level: string;
   demoUrl: string;
-  benefits: BenefitType[];
-  prerequisites: PrerequisiteType[];
   reviews: ReviewType[];
   courseData: CourseDataType[];
-  ratings?: number;
+  rating?: number;
   purchased: number;
 };

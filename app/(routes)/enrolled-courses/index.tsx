@@ -13,13 +13,30 @@ export default function index() {
   const { loading, user } = useUser();
 
   useEffect(() => {
-    const res: any = axios.get(`${SERVER_URI}/course/get-courses`);
-    const courses: CoursesType[] = res.data.course;
-    const data = courses.filter((i: CoursesType) =>
-      user?.courses?.some((d: any) => d._id === i._id)
-    );
-    setCourses(data);
-  }, [loader, user]);
+    const fetchCourses = async () => {
+      try {
+        setLoader(true);
+        const res = await axios.get(`${SERVER_URI}/course/get-courses`);
+        
+        // check data from server
+        if (res.data && res.data.course) {
+          const courses: CoursesType[] = res.data.course;
+          const data = courses.filter((i: CoursesType) =>
+            user?.courses?.some((d: any) => d._id === i._id)
+          );
+          setCourses(data);
+        } else {
+          console.error("Courses data is undefined or not in the expected format.");
+        }
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      } finally {
+        setLoader(false);
+      }
+    };
+
+    fetchCourses();
+  }, [user]);
   return (
     <>
       {loading || loader ? (

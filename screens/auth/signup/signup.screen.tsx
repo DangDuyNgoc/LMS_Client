@@ -120,7 +120,10 @@ export default function SignUpScreen() {
         email: "",
         password: "",
       });
-      router.push("/(routes)/verifyAccount");
+      router.push({
+        pathname: "/(routes)/verifyAccount",
+        params: {mode: "activation"}
+      });
       setButtonSpinner(false);
     } catch (error: any) {
       console.log("Error", error.response?.data);

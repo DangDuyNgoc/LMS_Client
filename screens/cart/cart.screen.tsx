@@ -23,25 +23,42 @@ export default function CartScreen() {
 
   useEffect(() => {
     const loadCartData = async () => {
-      const cart: any = await AsyncStorage.getItem("cart");
-      setCartItems(cart ? JSON.parse(cart) : []);
+      try {
+        const cart = await AsyncStorage.getItem("cart");
+        setCartItems(cart ? JSON.parse(cart) : []);
+      } catch (error) {
+        console.error("Error loading cart data:", error);
+      }
     };
     loadCartData();
   }, []);
 
+  console.log(cartItems);
+
   const onRefresh = async () => {
     setRefreshing(true);
-    const cart: any = await AsyncStorage.getItem("cart");
-    setCartItems(cart ? JSON.parse(cart) : []);
-    setRefreshing(false);
+    try {
+      const cart = await AsyncStorage.getItem("cart");
+      setCartItems(cart ? JSON.parse(cart) : []);
+    } catch (error) {
+      console.error("Error refreshing cart data:", error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const calculateTotalPrice = () => {
+    if (!cartItems || cartItems.length === 0) return "0.00";
     const totalPrice = cartItems.reduce((total, item) => total + item.price, 0);
     return totalPrice.toFixed(2);
   };
 
   const handleCourseDetails = (courseDetails: any) => {
+    if (!courseDetails) {
+      console.error("Invalid course details.");
+      return;
+    }
+
     router.push({
       pathname: "/(routes)/course-details",
       params: { item: JSON.stringify(courseDetails) },
@@ -49,11 +66,20 @@ export default function CartScreen() {
   };
 
   const handleRemoveItem = async (item: any) => {
-    const existingCartData = await AsyncStorage.getItem("cart");
-    const cartData = existingCartData ? JSON.parse(existingCartData) : [];
-    const updatedCartData = cartData.filter((i: any) => i._id !== item._id);
-    await AsyncStorage.setItem("cart", JSON.stringify(updatedCartData));
-    setCartItems(updatedCartData);
+    if (!item || !item._id) {
+      console.error("Invalid item data.");
+      return;
+    }
+
+    try {
+      const existingCartData = await AsyncStorage.getItem("cart");
+      const cartData = existingCartData ? JSON.parse(existingCartData) : [];
+      const updatedCartData = cartData.filter((i: any) => i._id !== item._id);
+      await AsyncStorage.setItem("cart", JSON.stringify(updatedCartData));
+      setCartItems(updatedCartData);
+    } catch (error) {
+      console.error("Error removing item from cart:", error);
+    }
   };
 
   const createOrder = async (paymentResponse: any) => {

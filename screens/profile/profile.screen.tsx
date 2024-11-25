@@ -1,13 +1,24 @@
-import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  StyleSheet,
+} from "react-native";
 import React, { useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import useUser from "@/hook/auth/useUser";
 import Loader from "@/components/loader/loader";
+import * as ImageManipulator from "expo-image-manipulator";
 import {
   AntDesign,
   FontAwesome,
   Ionicons,
   MaterialCommunityIcons,
+  Feather,
 } from "@expo/vector-icons";
 import { useFonts } from "expo-font";
 import {
@@ -22,36 +33,49 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { widthPercentageToDP } from "react-native-responsive-screen";
 import axios from "axios";
 import { SERVER_URI } from "@/utils/uri";
 import { router } from "expo-router";
+import { Toast } from "react-native-toast-notifications";
 
 export default function ProfileScreen() {
   const { user, loading, setRefetch } = useUser();
   const [image, setImage] = useState<any>(null);
   const [loader, setLoader] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
+      aspect: [1, 1],
+      quality: 0,
     });
 
     if (!result.canceled) {
-      const base64 = await FileSystem.readAsStringAsync(result.assets[0].uri, {
+      const uri = result.assets[0].uri;
+      const mimeType = result.assets[0].type || "image/jpeg";
+
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 300 } }],
+        { compress: 0.5 }
+      );
+
+      const base64 = await FileSystem.readAsStringAsync(manipulatedImage.uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
       setLoader(true);
-      const base64Image = `data:image/png;base64,${base64}`;
+      const base64Image = `data:${mimeType};base64,${base64}`;
       setImage(base64Image);
 
       const accessToken = await AsyncStorage.getItem("access_token");
       const refreshToken = await AsyncStorage.getItem("refresh_token");
 
       try {
-        const res = await axios.post(
+        const res = await axios.put(
           `${SERVER_URI}/user/update-avatar`,
           {
             avatar: base64Image,
@@ -75,9 +99,53 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleUpdateUser = async () => {
+    if(!name.trim()) {
+      return;
+    }
+
+    setLoader(true);
+    const accessToken = await AsyncStorage.getItem("access_token");
+    const refreshToken = await AsyncStorage.getItem("refresh_token");
+
+    try {
+      const res = await axios.put(`${SERVER_URI}/user/update-user`, {name}, {
+        headers: {
+          "access-token": accessToken,
+          "refresh-token": refreshToken,
+        }
+      })
+
+      if(res.data?.success) {
+        setRefetch(true);
+        setLoader(false);
+        setName("");
+
+        if (user) {
+          user.name = name;
+        }
+
+        setOpen(!open);
+        Toast.show("User Updated Successfully", {
+          placement: "top",
+          type: "success"
+        });
+      } else {
+        Toast.show(res.data?.message, {
+          placement: "top",
+          type: "success"
+        });
+      }
+    } catch (error) {
+      setLoader(false);
+      console.log(error);
+    } 
+  }
+
   const handleLogout = async () => {
     await AsyncStorage.removeItem("access_token");
     await AsyncStorage.removeItem("refresh_token");
+    await AsyncStorage.removeItem("user_id");
     router.push("/(routes)/login");
   };
 
@@ -110,7 +178,7 @@ export default function ProfileScreen() {
                     uri:
                       image ||
                       user?.avatar?.url ||
-                      "https://asset.cloudinary.com/dsfdghxx4/4d712a625f4591eb7056508061dcf428",
+                      "https://res.cloudinary.com/dsfdghxx4/image/upload/v1730813754/nrxsg8sd9iy10bbsoenn_bzlq2c.png",
                   }}
                   style={{ width: 90, height: 90, borderRadius: 100 }}
                 />
@@ -133,16 +201,27 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-            <Text
-              style={{
-                textAlign: "center",
-                fontSize: 25,
-                paddingTop: 10,
-                fontWeight: "600",
-              }}
+            <TouchableOpacity
+              style={{ flexDirection: "row", justifyContent: "center" }}
+              onPress={() => setOpen(!open)}
             >
-              {user?.name}
-            </Text>
+              <Text
+                style={{
+                  textAlign: "center",
+                  fontSize: 25,
+                  paddingTop: 10,
+                  fontWeight: "600",
+                }}
+              >
+                {user?.name}
+              </Text>
+              <Feather
+                style={{ textAlign: "center", marginTop: 14, marginLeft: 8 }}
+                name="edit-3"
+                size={24}
+                color="black"
+              />
+            </TouchableOpacity>
             <View style={{ marginHorizontal: 16, marginTop: 30 }}>
               <Text
                 style={{
@@ -153,7 +232,7 @@ export default function ProfileScreen() {
               >
                 Account Details
               </Text>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -204,7 +283,7 @@ export default function ProfileScreen() {
                 <TouchableOpacity>
                   <AntDesign name="right" size={26} color={"#CBD5E0"} />
                 </TouchableOpacity>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               <TouchableOpacity
                 style={{
                   flexDirection: "row",
@@ -266,6 +345,7 @@ export default function ProfileScreen() {
                   justifyContent: "space-between",
                   marginBottom: 20,
                 }}
+                onPress={() => handleLogout()}
               >
                 <View
                   style={{
@@ -291,18 +371,71 @@ export default function ProfileScreen() {
                       color={"black"}
                     />
                   </View>
-                  <TouchableOpacity onPress={() => handleLogout()}>
                     <Text>Log out</Text>
-                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity>
-                  <AntDesign name="right" size={26} color={"#CBD5E0"} />
-                </TouchableOpacity>
               </TouchableOpacity>
             </View>
           </ScrollView>
         </LinearGradient>
       )}
+
+      <Modal animationType="slide" visible={open}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            paddingHorizontal: 15,
+            backgroundColor: "#9BA8B2",
+          }}
+        >
+          <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+            <TouchableOpacity onPress={() => setOpen(!open)}>
+              <Ionicons name="close-outline" size={25} />
+            </TouchableOpacity>
+          </View>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="Enter your name"
+            style={{
+              marginVertical: 20,
+              textAlignVertical: "top",
+              justifyContent: "flex-start",
+              backgroundColor: "#fff",
+              borderRadius: 10,
+              height: 100,
+              padding: 10,
+            }}
+            multiline={true}
+          />
+          <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+            <TouchableOpacity
+              style={[
+                styles.button,
+                name.trim() === "" && { backgroundColor: "#b0c4de" }, 
+              ]}
+              disabled={name === ""}
+              onPress={handleUpdateUser}
+            >
+              <Text style={{ color: "#fff", fontSize: 18, fontWeight: "600" }}>
+                Submit
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  button: {
+    width: widthPercentageToDP("35%"),
+    height: 40,
+    backgroundColor: "#2467EC",
+    marginVertical: 10,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

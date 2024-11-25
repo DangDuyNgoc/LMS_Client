@@ -4,6 +4,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  Image,
+  FlatList,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
@@ -13,6 +15,7 @@ import axios from "axios";
 import { SERVER_URI } from "@/utils/uri";
 import { router } from "expo-router";
 import { widthPercentageToDP } from "react-native-responsive-screen";
+import CourseCard from "@/components/cards/course.card";
 
 export default function SearchInput({ homeScreen }: { homeScreen?: boolean }) {
   const [value, setValue] = useState("");
@@ -56,34 +59,83 @@ export default function SearchInput({ homeScreen }: { homeScreen?: boolean }) {
     return null;
   }
 
-  const renderCourseItem = ({item} : {item: CoursesType}) => (
+  const renderCourseItem = ({ item }: { item: CoursesType }) => (
     <TouchableOpacity
-    style={{
-      backgroundColor: "#fff",
-      padding: 10,
-      width: widthPercentageToDP("90%"),
-      marginLeft: "1.5%",
-      flexDirection: "row",
-    }}
-    onPress={() => router.push("/(routes)/course-details")}
+      style={{
+        backgroundColor: "#fff",
+        padding: 10,
+        width: widthPercentageToDP("90%"),
+        marginLeft: "1.5%",
+        flexDirection: "row",
+      }}
+      onPress={() =>
+        router.push({
+          pathname: "/(routes)/course-details",
+          params: { item: JSON.stringify(item) },
+        })
+      }
     >
-
+      <Image
+        source={{ uri: item?.thumbnail?.url }}
+        style={{ width: 60, height: 60, borderRadius: 10 }}
+      />
+      <Text
+        style={{
+          fontSize: 14,
+          paddingLeft: 10,
+          width: widthPercentageToDP("75%"),
+        }}
+      >
+        {item.name}
+      </Text>
     </TouchableOpacity>
-  )
+  );
   return (
-    <View style={styles.filteringContainer}>
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={[styles.input, { fontFamily: "Nunito_700QBold" }]}
-          value={value}
-          onChangeText={setValue}
-          placeholder="Search here....."
-          placeholderTextColor={"#C67cc"}
-        />
-        <TouchableOpacity style={styles.searchIconContainer}>
-          <AntDesign name="search1" size={20} color="#fff" />
-        </TouchableOpacity>
+    <View>
+      <View style={styles.filteringContainer}>
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={[styles.input, { fontFamily: "Nunito_700QBold" }]}
+            value={value}
+            onChangeText={setValue}
+            placeholder="Search here....."
+            placeholderTextColor={"#C67cc"}
+          />
+          <TouchableOpacity
+            style={styles.searchIconContainer}
+            onPress={() => router.push("/(tabs)/search")}
+          >
+            <AntDesign name="search1" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
+      <View style={{ paddingHorizontal: 10 }}>
+        <FlatList
+          data={filteredCourses}
+          keyExtractor={(item: CoursesType) => item._id}
+          renderItem={
+            homeScreen
+              ? renderCourseItem
+              : ({ item }) => <CourseCard item={item} key={item._id} />
+          }
+        />
+      </View>
+      {!homeScreen && (
+        <>
+          {filteredCourses?.length === 0 && (
+            <Text
+              style={{
+                textAlign: "center",
+                paddingTop: 50,
+                fontSize: 20,
+                fontWeight: "600",
+              }}
+            >
+              No courses found
+            </Text>
+          )}
+        </>
+      )}
     </View>
   );
 }

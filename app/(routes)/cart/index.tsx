@@ -12,7 +12,6 @@ export default function index() {
       const key = await axios.get(
         `${SERVER_URI}/order/payment/publishable-key`
       );
-      console.log(key.data.publishableKey);
       setPublishableKey(key.data.publishableKey);
     } catch (error) {
       console.log(error);

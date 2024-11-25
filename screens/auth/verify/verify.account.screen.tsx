@@ -8,7 +8,7 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import React, { useRef, useState } from "react";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Button from "@/components/button/button";
@@ -16,6 +16,8 @@ import { SERVER_URI } from "@/utils/uri";
 import { Toast } from "react-native-toast-notifications";
 
 export default function VerifyAccountScreen() {
+  const {mode} = useLocalSearchParams();
+
   const [code, setCode] = useState(new Array(4).fill(""));
 
   const inputs = useRef<any>([...Array(4)].map(() => React.createRef()));
@@ -39,24 +41,37 @@ export default function VerifyAccountScreen() {
   };
 
   const handleSubmit = async () => {
+    const otp = code.join("");
+    const activation_token = await AsyncStorage.getItem("activation_token");
 
-    
     try {
-      const otp = code.join("");
-      const activation_token = await AsyncStorage.getItem("activation_token");
-
-      console.log("activation token", activation_token);
-
-      const res = await axios.post(`${SERVER_URI}/user/activate-user`, {
+      const res = 
+      mode === "activation" ? 
+      await axios.post(`${SERVER_URI}/user/activate-user`, {
+        activation_code: otp,
+        activation_token,
+      }) : await axios.post(`${SERVER_URI}/user/verify-otp-reset-password`, {
         activation_code: otp,
         activation_token,
       });
 
-      Toast.show(res.data?.message, {
-        type: "success",
-      });
+      // Toast.show(res.data?.message, {
+      //   type: "success",
+      // });
+
+      Toast.show(
+        mode === "activation"
+          ? "Your account activated successfully!"
+          : "OTP verified successfully! Proceed to reset password.",
+        { type: "success" }
+      );
+
       setCode(new Array(4).fill(""));
-      router.push("/(routes)/login");
+      if(mode === "activation") {
+        router.push("/(routes)/login");
+      } else {
+        router.push("/(routes)/reset-password");
+      }
     } catch (error: any) {
       console.log(error?.response?.data);
       Toast.show(error?.response?.data?.message, {

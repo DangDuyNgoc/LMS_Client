@@ -12,13 +12,13 @@ import { WebView } from "react-native-webview";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { widthPercentageToDP } from "react-native-responsive-screen";
+import { FontAwesome } from "@expo/vector-icons";
+import { Toast } from "react-native-toast-notifications";
 
 import Loader from "@/components/loader/loader";
 import useUser from "@/hook/auth/useUser";
 import { SERVER_URI } from "@/utils/uri";
 import QuestionsCard from "@/components/cards/question.card";
-import { Toast } from "react-native-toast-notifications";
-import { FontAwesome } from "@expo/vector-icons";
 import ReviewCard from "@/components/cards/review.card";
 
 export default function CourseAccessScreen() {
@@ -34,28 +34,42 @@ export default function CourseAccessScreen() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [question, setQuestion] = useState("");
   const [review, setReview] = useState("");
-  const [rating, setRating] = useState(1);
   const [reviewAvailable, setReviewAvailable] = useState(false);
+  const [rating, setRating] = useState(1);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [videoData, setVideoData] = useState({
+    otp: "",
+    playbackInfo: "",
+  });
+
+  const totalPage = courseContentData.length;
 
   useEffect(() => {
-    const subscription = async () => {
+    const fetchData = async () => {
       await fetchCourseContent();
       const isReviewAvailable = data?.reviews?.find(
         (i: any) => i.user._id === user?._id
       );
-
       if (isReviewAvailable) {
         setReviewAvailable(true);
       }
     };
-    subscription();
-  });
+    fetchData();
+  }, []);
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     await fetchVideoUrl();
+  //   };
+  //   fetchData();
+  // }, []);
 
   const fetchCourseContent = async () => {
     const accessToken = await AsyncStorage.getItem("access_token");
     const refreshToken = await AsyncStorage.getItem("refresh_token");
     try {
-      const res: any = axios.get(
+      const res: any = await axios.get(
         `${SERVER_URI}/course/get-course-content/${data?._id}`,
         {
           headers: {
@@ -74,14 +88,25 @@ export default function CourseAccessScreen() {
     }
   };
 
+  const fetchVideoUrl = async () => {
+    try {
+      const res = await axios.post(`${SERVER_URI}/course/getVdoCipherOTP`, {
+        videoId: data.demoUrl,
+      });
+      setVideoData(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handleQuestionSubmit = async () => {
     const accessToken = await AsyncStorage.getItem("access_token");
     const refreshToken = await AsyncStorage.getItem("refresh_token");
     try {
-      const res: any = axios.post(
+      const res = await axios.post(
         `${SERVER_URI}/course/add-question`,
         {
-          question,
+          question: question,
           courseId: data?._id,
           courseContentId: courseContentData[activeVideoData]?._id,
         },
@@ -108,8 +133,8 @@ export default function CourseAccessScreen() {
     const refreshToken = await AsyncStorage.getItem("refresh_token");
 
     try {
-      await axios.post(
-        `${SERVER_URI}/course/add-review${data._id}`,
+      const res = await axios.post(
+        `${SERVER_URI}/course/add-review/${data._id}`,
         {
           review,
           rating,
@@ -122,14 +147,27 @@ export default function CourseAccessScreen() {
         }
       );
 
+      await fetchCourseContent();
       setRating(1);
       setReview("");
-      router.push({
-        pathname: "/(routes)/course-details",
-        params: { item: JSON.stringify(data) },
+      Toast.show("Review created successfully!", {
+        placement: "top",
+        type: "success",
       });
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const handlePreVideo = () => {
+    if (activeVideoData > 0) {
+      setActiveVideoData(activeVideoData - 1);
+    }
+  };
+
+  const handleNextVideo = () => {
+    if (activeVideoData < totalPage - 1) {
+      setActiveVideoData(activeVideoData + 1);
     }
   };
 
@@ -156,10 +194,18 @@ export default function CourseAccessScreen() {
         <Loader />
       ) : (
         <ScrollView stickyHeaderIndices={[0]} style={{ flex: 1, padding: 10 }}>
-          <View>
+          <View
+            style={{ width: "100%", aspectRatio: 16 / 9, borderRadius: 10 }}
+          >
             <WebView
-              source={{ uri: courseContentData[activeVideoData]?.videoUrl }}
+              source={{
+                uri:
+                  courseContentData[activeVideoData]?.videoUrl! 
+              }}
               allowsFullscreenVideo={true}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              useWebKit={true}
             />
           </View>
           <View
@@ -170,36 +216,43 @@ export default function CourseAccessScreen() {
             }}
           >
             <TouchableOpacity
-              style={styles.button}
+              style={[
+                styles.button,
+                activeVideoData === 0 && styles.buttonDisabled,
+              ]}
               disabled={activeVideoData === 0}
-              onPress={() => setActiveVideoData(activeVideoData - 1)}
+              onPress={handlePreVideo}
             >
               <Text style={{ color: "#fff", fontSize: 18, fontWeight: "600" }}>
                 Prev
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.button}
-              onPress={() => setActiveVideoData(activeVideoData + 1)}
+              style={[
+                styles.button,
+                activeVideoData === totalPage - 1 && styles.buttonDisabled,
+              ]}
+              onPress={handleNextVideo}
+              disabled={activeVideoData === totalPage - 1}
             >
               <Text style={{ color: "#fff", fontSize: 18, fontWeight: "600" }}>
                 Next
               </Text>
             </TouchableOpacity>
           </View>
+
           <View style={{ paddingVertical: 10 }}>
             <Text style={{ fontSize: 20, fontWeight: "bold" }}>
               {activeVideoData + 1}.{courseContentData[activeVideoData]?.title}
             </Text>
           </View>
+
           <View
             style={{
               flexDirection: "row",
               marginTop: 25,
-              marginHorizontal: 10,
               backgroundColor: "#E1E9F8",
               borderRadius: 50,
-              gap: 10,
             }}
           >
             <TouchableOpacity
@@ -264,8 +317,8 @@ export default function CourseAccessScreen() {
           {activeButton === "About" && (
             <View
               style={{
-                marginHorizontal: 16,
-                marginVertical: 25,
+                marginHorizontal: 14,
+                marginVertical: 24,
                 paddingHorizontal: 10,
               }}
             >
@@ -315,27 +368,26 @@ export default function CourseAccessScreen() {
                   }}
                   multiline={true}
                   placeholder="Enter your question....."
+                />
+                <View
+                  style={{ flexDirection: "row", justifyContent: "flex-end" }}
                 >
-                  <View
-                    style={{ flexDirection: "row", justifyContent: "flex-end" }}
+                  <TouchableOpacity
+                    style={[styles.button]}
+                    disabled={question === ""}
+                    onPress={() => handleQuestionSubmit()}
                   >
-                    <TouchableOpacity
-                      style={[styles.button]}
-                      disabled={question === ""}
-                      onPress={() => handleQuestionSubmit()}
+                    <Text
+                      style={{
+                        color: "#fff",
+                        fontSize: 18,
+                        fontWeight: "600",
+                      }}
                     >
-                      <Text
-                        style={{
-                          color: "#fff",
-                          fontSize: 18,
-                          fontWeight: "600",
-                        }}
-                      >
-                        Submit
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </TextInput>
+                      Submit
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
               <View style={{ marginBottom: 20 }}>
                 {courseContentData[activeVideoData]?.questions
@@ -343,8 +395,8 @@ export default function CourseAccessScreen() {
                   .reverse()
                   .map((item: CommentType, index: number) => (
                     <QuestionsCard
-                      item={item}
                       key={index}
+                      item={item}
                       fetchCourseContent={fetchCourseContent}
                       courseData={data}
                       contentId={courseContentData[activeVideoData]._id}
@@ -355,7 +407,7 @@ export default function CourseAccessScreen() {
           )}
 
           {activeButton === "Reviews" && (
-            <View style={{ marginHorizontal: 16, marginVertical: 25 }}>
+            <View style={{ marginHorizontal: 14, marginVertical: 24 }}>
               {!reviewAvailable && (
                 <View>
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -408,9 +460,14 @@ export default function CourseAccessScreen() {
                 </View>
               )}
 
-              <View style={{ rowGap: 25 }}>
-                {data?.reviews?.map((item: ReviewType, index: number) => (
-                  <ReviewCard item={item} key={index} />
+              <View style={{ rowGap: 2 }}>
+                {data?.reviews?.map((item: ReviewType) => (
+                  <ReviewCard
+                    item={item}
+                    key={item._id}
+                    fetchCourseContent={fetchCourseContent}
+                    courseData={data}
+                  />
                 ))}
               </View>
             </View>
@@ -430,5 +487,8 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
 });

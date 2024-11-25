@@ -3,11 +3,14 @@ import React, { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { FontAwesome } from "@expo/vector-icons";
-import CourseLessons from "@/components/courses/course.lessons";
-import ReviewCard from "@/components/cards/review.card";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { Toast } from "react-native-toast-notifications";
+
+import CourseLessons from "@/components/courses/course.lessons";
 import useUser from "@/hook/auth/useUser";
+import ReviewCourseCard from "@/components/cards/review.course.card";
+import Ratings from "@/utils/ratings";
 
 export default function CourseDetailsScreen() {
   const { item } = useLocalSearchParams();
@@ -24,16 +27,27 @@ export default function CourseDetailsScreen() {
   }, [user]);
 
   const handleAddToCart = async () => {
-    const existingCartData = await AsyncStorage.getItem("cart");
-    const cartData = existingCartData ? JSON.parse(existingCartData) : [];
-    const itemExists = cartData.some(
-      (item: any) => item._id === courseData._id
-    );
-    if (!itemExists) {
-      cartData.push(courseData);
-      await AsyncStorage.setItem("cart", JSON.stringify(cartData));
+    if (!courseData || !courseData._id) {
+      console.error("Invalid course data.");
+      return;
     }
-    router.push("/(routes)/cart");
+
+    try {
+      const existingCartData = await AsyncStorage.getItem("cart");
+      const cartData = existingCartData ? JSON.parse(existingCartData) : [];
+      const itemExists = cartData.some(
+        (item: any) => item._id === courseData._id
+      );
+      if (!itemExists) {
+        cartData.push(courseData);
+        await AsyncStorage.setItem("cart", JSON.stringify(cartData));
+      } else {
+        console.log("Item already exists in the cart.");
+      }
+      router.push("/(routes)/cart");
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+    }
   };
 
   return (
@@ -78,15 +92,16 @@ export default function CourseDetailsScreen() {
                 marginRight: 8,
               }}
             >
-              <FontAwesome name="star" size={14} color={"#FFB800"} />
+              <Ratings rating={courseData?.rating} />
               <Text
                 style={{
-                  color: "white",
+                  color: "#fff",
+                  marginTop: 6,
                   marginLeft: 4,
                   fontFamily: "Nunito_600SemiBold",
                 }}
               >
-                {courseData?.ratings}
+                {courseData?.rating}
               </Text>
             </View>
           </View>
@@ -124,7 +139,7 @@ export default function CourseDetailsScreen() {
                 paddingVertical: 10,
               }}
             >
-              {courseData?.price}
+              ${courseData?.price}
             </Text>
             <Text
               style={{
@@ -134,7 +149,7 @@ export default function CourseDetailsScreen() {
                 textDecorationLine: "line-through",
               }}
             >
-              {courseData?.estimatedPrice}
+              ${courseData?.estimatedPrice}
             </Text>
           </View>
           <Text style={{ fontSize: 15 }}>{courseData?.purchased} students</Text>
@@ -265,7 +280,7 @@ export default function CourseDetailsScreen() {
           <View style={{ marginHorizontal: 16, marginVertical: 25 }}>
             <View style={{ rowGap: 25 }}>
               {courseData?.reviews?.map((item: ReviewType, index: number) => (
-                <ReviewCard item={item} key={index} />
+                <ReviewCourseCard item={item} key={index} />
               ))}
             </View>
           </View>

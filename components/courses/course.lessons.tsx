@@ -90,23 +90,31 @@ export default function CourseLessons({
                           <View style={styles.itemContainer}>
                             <View style={styles.itemContainerWrapper}>
                               <View style={styles.itemTitleWrapper}>
-                                <Feather name="video"
+                                <Feather
+                                  name="video"
                                   size={20}
-                                  color={"#8a8a8a"}/>
-                                <Text style={[
+                                  color={"#8a8a8a"}
+                                />
+                                <Text
+                                  style={[
                                     styles.itemTitleText,
                                     { fontFamily: "Nunito_500Medium" },
-                                  ]}> {item.title}</Text>
+                                  ]}
+                                >
+                                  {" "}
+                                  {item.title}
+                                </Text>
                               </View>
                               <View style={styles.itemDataContainer}>
-                              <Text
+                                <Text
                                   style={{
                                     marginRight: 6,
                                     color: "#818181",
                                     fontFamily: "Nunito_400Regular",
                                   }}
                                 >
-                                  {item.videoLength} {item?.videoLength > 60 ? "hour" : "minutes"}
+                                  {item.videoLength}{" "}
+                                  {item?.videoLength > 60 ? "hour" : "minutes"}
                                 </Text>
                               </View>
                             </View>
